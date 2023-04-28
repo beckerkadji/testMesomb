@@ -2,9 +2,6 @@ import dotenv from "dotenv";
 import { Controller } from "tsoa";
 import cloudinary from "cloudinary";
 import streamifier from "streamifier"
-import { InvalidatedProjectKind } from "typescript";
-import axios, { AxiosError } from "axios";
-
 
 dotenv.config();
 
@@ -64,13 +61,6 @@ export class My_Controller extends Controller {
 
     }  
 
-    public async payment(body: any, headers: any, url: string) : Promise<any> {
-
-        await axios.post(url,body,{ headers }).catch((e : AxiosError) => {
-            console.log('error is ',e.response)
-        })
-        return 'res'
-    }
 
     private async cloudinaryImageUploadMethod(file : any) : Promise<any> {
 

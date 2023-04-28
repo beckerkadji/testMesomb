@@ -1,22 +1,11 @@
-import {Body, Post, Route, Tags} from "tsoa";
+import {Body, Get, Path, Post, Route, Tags} from "tsoa";
 import {  IResponse, My_Controller } from "./controller";
 import { ResponseHandler } from "../../src/config/responseHandler";
 import code from "../../src/config/code";
-import axios from "axios";
-import { Signature } from "../utils/signature";
-import Settings from "../utils/settings";
+import { PaymentOperation, Signature } from "@hachther/mesomb";
+import TransactionType from "../types/transaction.type";
+import { paymentSchema } from "../validations/transaction.validation";
 const response = new ResponseHandler()
-
-interface paiementInterface {
-    amount: number,
-    payer: String
-}
-
-interface depositInterface {
-
-}
-
-
 
 @Tags("Transaction Controller")
 @Route("/transaction")
@@ -24,52 +13,31 @@ interface depositInterface {
 export class TransactionController extends My_Controller {
 
 
-    @Post('/paiement')
+    @Post('/payment')
     public async paiement(
-        @Body() body : paiementInterface 
+        @Body() body : TransactionType.payment 
     ): Promise<IResponse> {
         try {
-            const url: string = 'https://mesomb.hachther.com/api/v1.1/payment/collect/';
-            const AppKey = <string>process.env.APP_KEY
-            let data : any = {
-                    amount  : body.amount,
-                    payer : body.payer,
-                    fees: true,
-                    service : 'MTN',
-                    country : 'CM',
-                    currency : 'XAF'
+            const validate = this.validate(paymentSchema, body)
+            if(validate !== true)
+                return response.liteResponse(code.VALIDATION_ERROR, "Validation Error !", validate)
+
+            let service = this.getService(<string>body.phone)
+            if( service === 'ERROR') return response.liteResponse(code.FAILURE, 'Service not recognized !')
+
+            const payment = new PaymentOperation(
+                {
+                    applicationKey : <string>process.env.APP_KEY,
+                    accessKey : <string>process.env.APP_ACCESS_KEY,
+                    secretKey : <string>process.env.APP_SECRET_KEY
                 }
-
-            let date = new Date()
-
-            let authorization = this._getAuthorization(
-                'POST',
-                'payment/collect/',
-                date,
-                '',
-                {'content-type': 'application/json'},
-                data
-            )
-
-            const headers: Record<string, string> = {
-                "Autorization": authorization,
-                'x-mesomb-date': String(date.getTime()),
-                'x-mesomb-nonce': '',
-                'Content-Type': 'application/json',
-                'X-MeSomb-Application': AppKey,
-            }
-
-            const res = await this.payment(data, headers, url);
-            // const res = await fetch(url, 
-            //     { 
-            //         method: 'POST',
-            //         body: JSON.stringify(data),
-            //         headers
-            //     })
-            console.log('response', res)
-
-
-            return response.liteResponse(code.SUCCESS, "Success paiement !", res )
+            );
+            
+            const res: any = await payment.makeCollect(body.amount, service, <string>body.phone, new Date(), Signature.nonceGenerator(), null);
+            if(res.isOperationSuccess() || res.isTransactionSuccess())
+                return response.liteResponse(code.SUCCESS, "Success paiement !", res )
+            
+            return response.liteResponse(code.FAILURE, "Request Failed", res )
         }catch(e){
             return response.catchHandler(e)
         }
@@ -78,38 +46,104 @@ export class TransactionController extends My_Controller {
 
     @Post('/deposit')
     public async login(
-        @Body() body : depositInterface
+        @Body() body : TransactionType.deposit
     ) : Promise<IResponse> {
         try {
-            console.log('body', body)
-           
-        return response.liteResponse(code.SUCCESS, "Success Deposit !", )
+            const validate = this.validate(paymentSchema, body)
+            if(validate !== true)
+                return response.liteResponse(code.VALIDATION_ERROR, "Validation Error !", validate)
+
+            let service = this.getService(<string>body.phone)
+            if( service === 'ERROR') return response.liteResponse(code.FAILURE, 'Service not recognized !')
+
+            const payment = new PaymentOperation(
+                {
+                    applicationKey : <string>process.env.APP_KEY,
+                    accessKey : <string>process.env.APP_ACCESS_KEY,
+                    secretKey : <string>process.env.APP_SECRET_KEY
+                }
+            );
+            
+            const res: any = await payment.makeDeposit(body.amount, service, <string>body.phone, new Date(), Signature.nonceGenerator(), null);
+            if(res.isOperationSuccess() || res.isTransactionSuccess())
+                return response.liteResponse(code.SUCCESS, "Success paiement !", res)
+            
+            return response.liteResponse(code.FAILURE, "Request Failed", res )
         }
         catch (e){
             return response.catchHandler(e)
         }
     }
 
-    private _getAuthorization(
-        method: string,
-        endpoint: string,
-        date: Date,
-        nonce: string,
-        headers: Record<string, string> = {},
-        body: Record<string, any> | undefined = undefined,
-      ): string {
-        const url = this._buildUrl(endpoint);
-    
-        const credentials = { 
-            accessKey: <string>process.env.APP_ACCESS_KEY,
-            secretKey: <string>process.env.APP_SECRET_KEY
-        };
-        
-        let signature = Signature.signRequest('payment', method, url, date, nonce, credentials, headers, body);
-        return signature
-      }
+    @Get('/application-status')
+    public async getApplicaitonStatus(): Promise<IResponse> {
+        try{
+        const payment = new PaymentOperation(
+            {
+                applicationKey : <string>process.env.APP_KEY,
+                accessKey : <string>process.env.APP_ACCESS_KEY,
+                secretKey : <string>process.env.APP_SECRET_KEY
+            }
+        );
 
-      private _buildUrl(endpoint: string): string {
-        return `${Settings.HOST}/en/api/${Settings.APIVERSION}/${endpoint}`;
-      }
+        const application = await payment.getStatus();
+        if(!application)
+            return response.liteResponse(code.FAILURE, 'Request Error')
+        
+        return response.liteResponse(code.SUCCESS, 'SUCCESS !', application)
+
+        }catch(e){
+            return response.catchHandler(e)
+        }
+    }
+
+    // @Get('/transaction/{id}')
+    // public async getTransaction(
+    //     @Path() id: string
+    // ): Promise<IResponse> {
+    //     try {
+
+    //     const payment = new PaymentOperation(
+    //         {
+    //             applicationKey : <string>process.env.APP_KEY,
+    //             accessKey : <string>process.env.APP_ACCESS_KEY,
+    //             secretKey : <string>process.env.APP_SECRET_KEY
+    //         }
+    //     );
+    //     const transactions = await payment.getTransactions(['id1']);
+    //     if(!transactions)
+    //         return response.liteResponse(code.NOT_FOUND, 'TRANSACTION NOT FOUND')
+        
+    //     return response.liteResponse(code.SUCCESS, 'SUCCESS !', transactions)
+    //     }catch(e){
+    //         return response.catchHandler(e);
+    //     }
+    // }
+
+    private getService (number: string): string {
+            
+        if(
+            number.slice(0, 3) === '650' ||
+            number.slice(0, 3) === '651' ||
+            number.slice(0, 3) === '652' ||
+            number.slice(0, 3) === '653' ||
+            number.slice(0, 3) === '654' ||
+            number.slice(0, 2) === '67' ||
+            number.slice(0, 2) === '68'
+        ){
+            return 'MTN'
+        } else if(
+            number.slice(0, 3) === '655' ||
+            number.slice(0, 3) === '656' ||
+            number.slice(0, 3) === '657' ||
+            number.slice(0, 3) === '658' ||
+            number.slice(0, 3) === '659' ||
+            number.slice(0, 2) === '69' 
+        ){
+            return 'ORANGE'
+        } else {
+            return 'ERROR'
+        }
+    }
+    
 }

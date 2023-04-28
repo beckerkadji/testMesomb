@@ -14,5 +14,7 @@ export const schema = {
     title : Joi.string().required(),
     description : Joi.string().required(),
     image : Joi.string().required(),
+    amount : Joi.number().min(10),
+    phoneNumber : Joi.string().length(9)
 }
     

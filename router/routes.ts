@@ -4,8 +4,6 @@
 import { Controller, ValidationService, FieldErrors, ValidateError, TsoaRoute, HttpStatusCodeLiteral, TsoaResponse, fetchMiddlewares } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TransactionController } from './../app/controllers/transaction.controller';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { UserController } from './../app/controllers/user.controller';
 import { expressAuthentication } from './../app/middlewares/auth';
 // @ts-ignore - no great way to install types from subpackage
 const promiseAny = require('promise.any');
@@ -25,53 +23,25 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "paiementInterface": {
+    "defaultPhone": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TransactionType.payment": {
         "dataType": "refObject",
         "properties": {
             "amount": {"dataType":"double","required":true},
-            "payer": {"dataType":"string","required":true},
+            "phone": {"ref":"defaultPhone","required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "depositInterface": {
+    "TransactionType.deposit": {
         "dataType": "refObject",
         "properties": {
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "defaultEmail": {
-        "dataType": "refAlias",
-        "type": {"dataType":"string","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UserType.loginFields": {
-        "dataType": "refObject",
-        "properties": {
-            "email": {"ref":"defaultEmail","required":true},
-            "password": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "defaultFisrtName": {
-        "dataType": "refAlias",
-        "type": {"dataType":"string","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "defaultLastName": {
-        "dataType": "refAlias",
-        "type": {"dataType":"string","validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UserType.userCreateFields": {
-        "dataType": "refObject",
-        "properties": {
-            "firstName": {"ref":"defaultFisrtName","required":true},
-            "lastName": {"ref":"defaultLastName"},
-            "email": {"ref":"defaultEmail","required":true},
-            "password": {"dataType":"string","required":true},
+            "amount": {"dataType":"double","required":true},
+            "phone": {"ref":"defaultPhone","required":true},
         },
         "additionalProperties": false,
     },
@@ -86,13 +56,13 @@ export function RegisterRoutes(app: express.Router) {
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
-        app.post('/transaction/paiement',
+        app.post('/transaction/payment',
             ...(fetchMiddlewares<RequestHandler>(TransactionController)),
             ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.paiement)),
 
             function TransactionController_paiement(request: any, response: any, next: any) {
             const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"paiementInterface"},
+                    body: {"in":"body","name":"body","required":true,"ref":"TransactionType.payment"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -117,7 +87,7 @@ export function RegisterRoutes(app: express.Router) {
 
             function TransactionController_login(request: any, response: any, next: any) {
             const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"depositInterface"},
+                    body: {"in":"body","name":"body","required":true,"ref":"TransactionType.deposit"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -136,12 +106,11 @@ export function RegisterRoutes(app: express.Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/user',
-            authenticateMiddleware([{"Jwt":["root"]}]),
-            ...(fetchMiddlewares<RequestHandler>(UserController)),
-            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.index)),
+        app.get('/transaction/application-status',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.getApplicaitonStatus)),
 
-            function UserController_index(request: any, response: any, next: any) {
+            function TransactionController_getApplicaitonStatus(request: any, response: any, next: any) {
             const args = {
             };
 
@@ -151,86 +120,10 @@ export function RegisterRoutes(app: express.Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new UserController();
+                const controller = new TransactionController();
 
 
-              const promise = controller.index.apply(controller, validatedArgs as any);
-              promiseHandler(controller, promise, response, undefined, next);
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/user/login',
-            ...(fetchMiddlewares<RequestHandler>(UserController)),
-            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.login)),
-
-            function UserController_login(request: any, response: any, next: any) {
-            const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"UserType.loginFields"},
-            };
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = getValidatedArgs(args, request, response);
-
-                const controller = new UserController();
-
-
-              const promise = controller.login.apply(controller, validatedArgs as any);
-              promiseHandler(controller, promise, response, undefined, next);
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/user/register',
-            ...(fetchMiddlewares<RequestHandler>(UserController)),
-            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.register)),
-
-            function UserController_register(request: any, response: any, next: any) {
-            const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"UserType.userCreateFields"},
-            };
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = getValidatedArgs(args, request, response);
-
-                const controller = new UserController();
-
-
-              const promise = controller.register.apply(controller, validatedArgs as any);
-              promiseHandler(controller, promise, response, undefined, next);
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/user/logout',
-            authenticateMiddleware([{"Jwt":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(UserController)),
-            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.logout)),
-
-            function UserController_logout(request: any, response: any, next: any) {
-            const args = {
-                    req: {"in":"request","name":"req","required":true,"dataType":"object"},
-            };
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = getValidatedArgs(args, request, response);
-
-                const controller = new UserController();
-
-
-              const promise = controller.logout.apply(controller, validatedArgs as any);
+              const promise = controller.getApplicaitonStatus.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);
@@ -240,65 +133,6 @@ export function RegisterRoutes(app: express.Router) {
 
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
-
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-    function authenticateMiddleware(security: TsoaRoute.Security[] = []) {
-        return async function runAuthenticationMiddleware(request: any, _response: any, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            // keep track of failed auth attempts so we can hand back the most
-            // recent one.  This behavior was previously existing so preserving it
-            // here
-            const failedAttempts: any[] = [];
-            const pushAndRethrow = (error: any) => {
-                failedAttempts.push(error);
-                throw error;
-            };
-
-            const secMethodOrPromises: Promise<any>[] = [];
-            for (const secMethod of security) {
-                if (Object.keys(secMethod).length > 1) {
-                    const secMethodAndPromises: Promise<any>[] = [];
-
-                    for (const name in secMethod) {
-                        secMethodAndPromises.push(
-                            expressAuthentication(request, name, secMethod[name])
-                                .catch(pushAndRethrow)
-                        );
-                    }
-
-                    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-                    secMethodOrPromises.push(Promise.all(secMethodAndPromises)
-                        .then(users => { return users[0]; }));
-                } else {
-                    for (const name in secMethod) {
-                        secMethodOrPromises.push(
-                            expressAuthentication(request, name, secMethod[name])
-                                .catch(pushAndRethrow)
-                        );
-                    }
-                }
-            }
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            try {
-                request['user'] = await promiseAny(secMethodOrPromises);
-                next();
-            }
-            catch(err) {
-                // Show most recent error as response
-                const error = failedAttempts.pop();
-                error.status = error.status || 401;
-                next(error);
-            }
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        }
-    }
 
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
