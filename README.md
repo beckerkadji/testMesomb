@@ -1,4 +1,4 @@
-before clone this repository, assure you to intall:
+before clone this repository, assure you to install:
 - nodejs 16 or latest
 - npm package manager
 - typescript
